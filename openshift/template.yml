@@ -1,3 +1,54 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+  creationTimestamp: '2019-07-03T13:46:44Z'
+  labels:
+    app: sb-demo
+  name: sb-demo
+  namespace: test-app
+  resourceVersion: '1259904'
+  selfLink: /apis/build.openshift.io/v1/namespaces/test-app/buildconfigs/sb-demo
+  uid: feb22b32-9d98-11e9-a6f8-080027f75727
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'sb-demo:latest'
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    git:
+      uri: 'https://github.com/kalibek/sb-demo.git'
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: 'springboot-maven3-centos:latest'
+    type: Source
+  successfulBuildsHistoryLimit: 5
+  triggers:
+    - github:
+        secret: GWI8SLvOIVzwZtAcTb2G
+      type: GitHub
+    - generic:
+        secret: uowT2IXGX3HLvXk2i2BX
+      type: Generic
+    - type: ConfigChange
+    - imageChange:
+        lastTriggeredImageID: >-
+          codecentric/springboot-maven3-centos@sha256:91ecee201c42cfde8616dfe7b5c77c4f6100f95f50c6e8ffe16a78c99dde59bf
+      type: ImageChange
+status:
+  lastVersion: 5
+
+---
+
 apiVersion: apps.openshift.io/v1
 kind: DeploymentConfig
 metadata:
@@ -39,6 +90,27 @@ spec:
     spec:
       containers:
         - image: 'sb-demo:latest'
+          env:
+          - name: POSTGRES_HOST
+            value: postgresql
+          - name: POSTGRES_PORT
+            value: 5432
+          - name: POSTGRES_DB
+            valuefrom:
+              secretkeyref:
+                 key: database-name
+                 name: postgres
+          - name: POSTGRES_USER
+            valuefrom:
+              secretkeyref:
+                 key: database-user
+                 name: postgres
+          - name: POSTGRES_PASSWORD
+            valuefrom:
+              secretkeyref:
+                 key: database-password
+                 name: postgres
+
           imagePullPolicy: Always
           name: sb-demo
           ports:
@@ -77,3 +149,4 @@ status:
   replicas: 0
   unavailableReplicas: 0
   updatedReplicas: 0
+
