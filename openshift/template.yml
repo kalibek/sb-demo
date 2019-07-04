@@ -1,260 +1,79 @@
----
-kind: Template
-apiVersion: v1
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
 metadata:
-  name: sb-demo-s2i
   annotations:
-    description: Application template for sb-demo  applications
-    tags: quickstart,java,springboot
-    iconClass: ''
-objects:
-  - kind: ImageStream
-    apiVersion: v1
+    openshift.io/generated-by: OpenShiftNewApp
+  creationTimestamp: '2019-07-03T13:46:44Z'
+  generation: 1
+  labels:
+    app: sb-demo
+  name: sb-demo
+  namespace: test-app
+  resourceVersion: '973244'
+  selfLink: /apis/apps.openshift.io/v1/namespaces/test-app/deploymentconfigs/sb-demo
+  uid: feb47253-9d98-11e9-a6f8-080027f75727
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    app: sb-demo
+    deploymentconfig: sb-demo
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Rolling
+  template:
     metadata:
-      name: sb-demo-s2i
-      creationTimestamp:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
       labels:
-        build: sb-demo-s2i
-    spec: {}
-    status:
-      dockerImageRepository: ''
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      name: sb-demo-s2i
-      creationTimestamp:
-      labels:
-        build: sb-demo-s2i
+        app: sb-demo
+        deploymentconfig: sb-demo
     spec:
-      source:
-        type: Git
-        git:
-          uri: https://github.com/debianmaster/springboot-maven3-centos.git
-          ref: newrelic-agent
-      strategy:
-        type: Docker
-        dockerStrategy:
-          from:
-            kind: ImageStreamTag
-            name: base-centos7:latest
-          env:
-            - name: NEWRELIC_APPNAME
-              value: "${NEWRELIC_APPNAME}"
-            - name: NEWRELIC_LICENSE
-              value: "${NEWRELIC_LICENSE}"
-      output:
-        to:
+      containers:
+        - image: 'sb-demo:latest'
+          imagePullPolicy: Always
+          name: sb-demo
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - sb-demo
+        from:
           kind: ImageStreamTag
-          name: sb-demo-s2i:latest
-      resources: {}
-      postCommit: {}
-      nodeSelector:
-    status:
-      lastVersion: 0
-  - kind: ImageStream
-    apiVersion: v1
-    metadata:
-      name: base-centos7
-      creationTimestamp:
-      labels:
-        build: s2i-base
-      annotations:
-        openshift.io/generated-by: OpenShiftNewBuild
-    spec:
-      tags:
-        - name: latest
-          from:
-            kind: DockerImage
-            name: openshift/base-centos7
-          generation:
-          importPolicy: {}
-          referencePolicy:
-            type: ''
-  - kind: ImageStream
-    apiVersion: v1
-    metadata:
-      name: "${APPLICATION_NAME}"
-      labels:
-        app: "${APPLICATION_NAME}"
-  - kind: ImageStream
-    apiVersion: v1
-    metadata:
-      name: sb-demo
-    spec:
-      dockerImageRepository: "${SPRINGBOOT_NEWRELIC_UPSTREAM_IMAGE}"
-  - kind: Service
-    apiVersion: v1
-    metadata:
-      name: "${APPLICATION_NAME}"
-      labels:
-        app: "${APPLICATION_NAME}"
-      annotations:
-        description: Exposes and load balances the application pods
-    spec:
-      ports:
-        - name: 8080-tcp
-          protocol: TCP
-          port: 8080
-          targetPort: 8080
-      selector:
-        deploymentconfig: "${APPLICATION_NAME}"
-      type: ClusterIP
-      sessionAffinity: None
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      name: "${APPLICATION_NAME}"
-      labels:
-        app: "${APPLICATION_NAME}"
-      annotations:
-        description: Defines how to build the application
-    spec:
-      triggers:
-        - type: GitHub
-          github:
-            secret: "${GITHUB_WEBHOOK_SECRET}"
-        - type: Generic
-          generic:
-            secret: "${GENERIC_WEBHOOK_SECRET}"
-        - type: ConfigChange
-        - type: ImageChange
-          imageChange: {}
-      source:
-        type: Git
-        git:
-          uri: "${GIT_URI}"
-          ref: "${GIT_REF}"
-        contextDir: "${GIT_CONTEXT_DIR}"
-      strategy:
-        type: Source
-        sourceStrategy:
-          from:
-            kind: ImageStreamTag
-            name: ${SPRINGBOOT_NEWRELIC_UPSTREAM_IMAGE}:${SPRINGBOOT_NEWRELIC_UPSTREAM_IMAGE_TAG}
-      output:
-        to:
-          kind: ImageStreamTag
-          name: "${APPLICATION_NAME}:latest"
-      resources: {}
-  - kind: DeploymentConfig
-    apiVersion: v1
-    metadata:
-      name: "${APPLICATION_NAME}"
-      labels:
-        app: "${APPLICATION_NAME}"
-      annotations:
-        description: Defines how to deploy the application server
-    spec:
-      strategy:
-        type: Rolling
-        rollingParams:
-          updatePeriodSeconds: 1
-          intervalSeconds: 1
-          timeoutSeconds: 600
-          maxUnavailable: 25%
-          maxSurge: 25%
-        resources: {}
-      triggers:
-        - type: ConfigChange
-        - type: ImageChange
-          imageChangeParams:
-            automatic: true
-            containerNames:
-              - "${APPLICATION_NAME}"
-            from:
-              kind: ImageStreamTag
-              name: "${APPLICATION_NAME}:latest"
-      replicas: 1
-      selector:
-        deploymentconfig: "${APPLICATION_NAME}"
-      template:
-        metadata:
-          creationTimestamp:
-          labels:
-            deploymentconfig: "${APPLICATION_NAME}"
-        spec:
-          containers:
-            - name: "${APPLICATION_NAME}"
-              image: "${APPLICATION_NAME}"
-              ports:
-                - containerPort: 8080
-                  protocol: TCP
-              resources:
-                limits:
-                  memory: "${MEMORY_LIMIT}"
-              terminationMessagePath: "/dev/termination-log"
-              imagePullPolicy: Always
-          restartPolicy: Always
-          terminationGracePeriodSeconds: 30
-          dnsPolicy: ClusterFirst
-          securityContext: {}
-  - kind: Route
-    apiVersion: v1
-    metadata:
-      name: "${APPLICATION_NAME}"
-    spec:
-      host: "${APPLICATION_HOSTNAME}"
-      to:
-        kind: Service
-        name: "${APPLICATION_NAME}"
-parameters:
-  - name: MEMORY_LIMIT
-    displayName: Memory Limit
-    description: Maximum amount of memory the .NET Core container can use.
-    value: 750Mi
-    required: true
-  - name: APPLICATION_NAME
-    description: Application Name
-    value: sb-demo-app
-    displayName: Application Name
-    required: true
-  - name: GIT_URI
-    description: The URL of the repository with your application source code.
-    displayName: Git URI
-    required: true
-    value: https://github.com/kalibek/sb-demo.git
-  - name: GIT_REF
-    description: Set this to a branch name, tag or other ref of your repository if you
-      are not using the default branch.
-    displayName: Git Branch
-    value: master
-  - name: GIT_CONTEXT_DIR
-    description: Path within Git project to build; empty for root project directory.
-    displayName: Git Context Directory
-    value: ''
-  - name: APPLICATION_HOSTNAME
-    description: The exposed hostname that will route to the app service, if left blank
-      a value will be defaulted.
-    displayName: Application hostname
-  - name: SPRINGBOOT_NEWRELIC_UPSTREAM_IMAGE
-    description: Base OpenShift CPP S2I Image
-    value: sb-demo-s2i
-    displayName: Upstream S2I Image
-  - name: SPRINGBOOT_NEWRELIC_UPSTREAM_IMAGE_TAG
-    description: Base OpenShift CPP S2I Image Tag
-    value: latest
-    displayName: Upstream S2I Image Tag
-  - name: GITHUB_WEBHOOK_SECRET
-    description: GitHub trigger secret
-    generate: expression
-    from: "[a-zA-Z0-9]{8}"
-    required: true
-    displayName: GitHub Webhook Secret
-  - name: GENERIC_WEBHOOK_SECRET
-    description: Generic build trigger secret
-    generate: expression
-    from: "[a-zA-Z0-9]{8}"
-    displayName: Generic Webhook Secret
-    required: true
-  - name: NEWRELIC_APPNAME
-    description: Newrelic application name
-    value: ""
-    displayName: Newrelic application name
-    required: true
-  - name: NEWRELIC_LICENSE
-    description: Newrelic license key
-    value: ""
-    displayName: Newrelic license key
-    required: true
-labels:
-  template: sb-demoe-s2i
+          name: 'sb-demo:latest'
+          namespace: test-app
+      type: ImageChange
+status:
+  availableReplicas: 0
+  conditions:
+    - lastTransitionTime: '2019-07-03T13:46:44Z'
+      lastUpdateTime: '2019-07-03T13:46:44Z'
+      message: Deployment config does not have minimum availability.
+      status: 'False'
+      type: Available
+  latestVersion: 0
+  observedGeneration: 1
+  replicas: 0
+  unavailableReplicas: 0
+  updatedReplicas: 0
