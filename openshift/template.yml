@@ -3,14 +3,10 @@ kind: BuildConfig
 metadata:
   annotations:
     openshift.io/generated-by: OpenShiftNewApp
-  creationTimestamp: '2019-07-03T13:46:44Z'
   labels:
     app: sb-demo
   name: sb-demo
   namespace: test-app
-  resourceVersion: '1259904'
-  selfLink: /apis/build.openshift.io/v1/namespaces/test-app/buildconfigs/sb-demo
-  uid: feb22b32-9d98-11e9-a6f8-080027f75727
 spec:
   failedBuildsHistoryLimit: 5
   nodeSelector: null
@@ -54,15 +50,11 @@ kind: DeploymentConfig
 metadata:
   annotations:
     openshift.io/generated-by: OpenShiftNewApp
-  creationTimestamp: '2019-07-03T13:46:44Z'
   generation: 1
   labels:
     app: sb-demo
   name: sb-demo
   namespace: test-app
-  resourceVersion: '973244'
-  selfLink: /apis/apps.openshift.io/v1/namespaces/test-app/deploymentconfigs/sb-demo
-  uid: feb47253-9d98-11e9-a6f8-080027f75727
 spec:
   replicas: 1
   revisionHistoryLimit: 10
@@ -89,36 +81,35 @@ spec:
         deploymentconfig: sb-demo
     spec:
       containers:
-        - image: 'sb-demo:latest'
-          env:
-          - name: POSTGRES_HOST
-            value: postgresql
-          - name: POSTGRES_PORT
-            value: 5432
-          - name: POSTGRES_DB
-            valuefrom:
-              secretkeyref:
-                 key: database-name
-                 name: postgres
-          - name: POSTGRES_USER
-            valuefrom:
-              secretkeyref:
-                 key: database-user
-                 name: postgres
-          - name: POSTGRES_PASSWORD
-            valuefrom:
-              secretkeyref:
-                 key: database-password
-                 name: postgres
-
-          imagePullPolicy: Always
-          name: sb-demo
-          ports:
-            - containerPort: 8080
-              protocol: TCP
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
+      - env:
+        - name: POSTGRES_HOST
+          value: postgresql
+        - name: POSTGRES_PORT
+          value: '5432'
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              key: database-name
+              name: postgresql
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: database-user
+              name: postgresql
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: database-password
+              name: postgresql
+        image: 'sb-demo:latest'
+        imagePullPolicy: Always
+        name: sb-demo
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -149,4 +140,27 @@ status:
   replicas: 0
   unavailableReplicas: 0
   updatedReplicas: 0
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    openshift.io/generated-by: OpenShiftNewApp
+  labels:
+    app: sb-demo
+  name: sb-demo
+  namespace: test-app
+spec:
+  clusterIP: 172.30.72.236
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: sb-demo
+    deploymentconfig: sb-demo
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
