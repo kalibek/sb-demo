@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 class Person {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;
   private String name;
 
